@@ -1,12 +1,12 @@
 "use client"
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
-import type { GetRef, InputRef, TableColumnType, TableProps } from 'antd';
+import { GetRef, InputRef, TableColumnType, Typography, TableProps } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
 import { Button, Form, Input, Popconfirm, Table, Space } from 'antd';
 import useData from './data';
-import AddRowButton from '../add-row-button';
 import './index.css';
+import AddColButton from '../add-col-button';
 
 type FormInstance<T> = GetRef<typeof Form<T>>;
 
@@ -120,7 +120,8 @@ type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
 const DynamicTable: React.FC = () => {
   const { companies, createCompany, 
     editCompany, loading, deleteCompany, 
-    pageParams, setPageParams, total } = useData()
+    pageParams, setPageParams, updateColName, 
+    total, refetch } = useData()
 
   const [searchText, setSearchText] = useState('');
   const searchInput = useRef<InputRef>(null);
@@ -208,9 +209,8 @@ const DynamicTable: React.FC = () => {
     {
       title: 'id',
       dataIndex: 'id',
-      width: '30%',
+      width: 100,
       sorter: true,
-      // sortOrder: 'ascend',
       sortOrder: pageParams.sorter.order
     },
     {
@@ -226,11 +226,18 @@ const DynamicTable: React.FC = () => {
       ...getColumnSearchProps('name')
     },
     {
+      title: 'url',
+      dataIndex: 'url',
+      editable: true,
+    },
+    {
       title: 'operation',
       dataIndex: 'operation',
       render: (_: any, record: any) =>
         companies?.length >= 1 ? (
-          <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
+          <Popconfirm okButtonProps={{
+            type: 'dashed'
+          }} title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
             <a>Delete</a>
           </Popconfirm>
         ) : null,
@@ -246,7 +253,6 @@ const DynamicTable: React.FC = () => {
   };
 
   const handleSave = async(row: DataType) => {
-    console.log('record', row)
     const {id, domain, name, url} = row
     await editCompany({id, domain, name, url})
   };
@@ -259,59 +265,51 @@ const DynamicTable: React.FC = () => {
   };
 
 
-  // const getColumns = () => {
-  //   if(!companies[0]) return []
-  //   const keys = Object.keys(companies[0])
-
-  //   const newColumns = [defaultColumns[0]].concat(
-  //     keys.slice(1).map((key) => (
-  //     {
-  //       title: key,
-  //       dataIndex: key,
-  //       editable: true,
-  //     }
-  //   ))).concat([defaultColumns[1]])
+  const getColumns = () => {
+    if(!companies[0]) return []
+    const keys = Object.keys(companies[0])
+    const addedCols = keys.slice(4).map((key) => (
+      {
+        title: key,
+        dataIndex: key,
+        editable: true,
+      }
+    ))
+    const newColumns = [...defaultColumns.slice(0, 4)
+      , ...addedCols
+      , defaultColumns[defaultColumns.length - 1]]
     
-  //   return newColumns.map((col) => {
-  //     if (!col.editable) {
-  //       return col;
-  //     }
-  //     return {
-  //       ...col,
-  //       onCell: (record: DataType) => ({
-  //         record,
-  //         editable: col.editable,
-  //         dataIndex: col.dataIndex,
-  //         title: col.title,
-  //         handleSave,
-  //       }),
-  //     };
-  //   });
-  // }
+    return newColumns.map((col) => {
+      if (!(col as any).editable) {
+        return col;
+      }
+      return {
+        ...col,
+        title: (
+          ['domain', 'name', 'url'].includes(col.title as string) ? col.title :
+          <Typography.Text 
+            editable={{ onChange: (val) => {
+            updateColName(col.title as string, val)
+          } }}>
+            {(col as any).title}
+          </Typography.Text>),
+        onCell: (record: DataType) => ({
+          record,
+          editable: (col as any).editable,
+          dataIndex: col.dataIndex,
+          handleSave,
+        })
+      };
+    });
+  }
 
-
-  const columns = defaultColumns.map((col) => {
-    if (!(col as any).editable) {
-      return col;
-    }
-    return {
-      ...col,
-      onCell: (record: DataType) => ({
-        record,
-        editable: (col as any).editable,
-        dataIndex: col.dataIndex,
-        title: col.title,
-        handleSave,
-      }),
-    };
-  });
-
+  console.log('rr', refetch)
   return (
     <div>
       <Button onClick={handleAdd} style={{ marginBottom: 16 }}>
         + Add row
       </Button>
-      <AddRowButton/>
+      <AddColButton refetch ={refetch}/>
       <Table
         components={components}
         rowClassName={() => 'editable-row'}
@@ -324,9 +322,10 @@ const DynamicTable: React.FC = () => {
           showSizeChanger: true,
           showTotal: (total) => `Total ${total} items`
         }}
+        style={{width: 900}}
         rowKey={'id'}
         dataSource={companies}
-        columns={columns as ColumnTypes}
+        columns={getColumns() as ColumnTypes}
         loading={loading}
         onChange={(pagination, filter, sorter) => {
           console.log('pages', pageParams, filter, sorter)

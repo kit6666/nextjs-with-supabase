@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../api";
-import { Domain } from "domain";
 
 interface PageParams {
   current?: number
@@ -119,6 +118,24 @@ const useData = () => {
     await fetchCompanies(pageParams)
   }
 
+  const updateColName = async (oldName: string, newName: string) => {
+    try {
+      await supabase
+        .rpc('update_column', {
+          schema_name_in: 'public', //optional defaults to public
+          table_name_in: 'companies',//required name of the table
+          old_column_name_in: oldName,
+          new_column_name_in: newName,
+          type_in: 'text',    //optional: defaults to text
+          is_array: false           //optional: defaults to false
+        }); 
+
+      await fetchCompanies(pageParams)
+    } catch(err) {
+      console.log('error', err)
+    }
+  }
+
   const getTotal = async (pageParams: PageParams) => {
     const {filter} = pageParams
     const filterField = filter && Object.keys(filter)[0] 
@@ -133,10 +150,14 @@ const useData = () => {
     setTotal(count)
   }
 
+  const refetch = async () => {
+    await fetchCompanies(pageParams)
+  }
+
   console.log('companies', companies)
   return { companies, setCompanies, fetchCompanies, 
-    createCompany, editCompany, deleteCompany, pageParams, 
-    setPageParams, total, loading }
+    createCompany, editCompany, deleteCompany, updateColName, 
+    pageParams, setPageParams, refetch, total, loading }
 }
 
 export default useData
