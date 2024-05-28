@@ -94,14 +94,13 @@ const useData = () => {
   }
 
   const editCompany = async (info: Company) => {
-    const{ id, domain, name, url } = info
+    const{ id } = info
+    console.log('info', info)
     const { data, error } = await supabase
       .from('companies')
       .update([
         {
-          domain,
-          name,
-          url
+          ...info
         }
       ])
       .match({id})
@@ -154,7 +153,6 @@ const useData = () => {
     await fetchCompanies(pageParams)
   }
 
-  console.log('companies', companies)
   return { companies, setCompanies, fetchCompanies, 
     createCompany, editCompany, deleteCompany, updateColName, 
     pageParams, setPageParams, refetch, total, loading }

@@ -1,7 +1,7 @@
 "use client"
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
-import { GetRef, InputRef, TableColumnType, Typography, TableProps } from 'antd';
+import { GetRef, InputRef, TableColumnType, Typography, Image, Avatar } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
 import { Button, Form, Input, Popconfirm, Table, Space } from 'antd';
 import useData from './data';
@@ -210,20 +210,21 @@ const DynamicTable: React.FC = () => {
       title: 'id',
       dataIndex: 'id',
       width: 100,
+      fixed: 'left',
       sorter: true,
       sortOrder: pageParams.sorter.order
-    },
-    {
-      title: 'domain',
-      dataIndex: 'domain',
-      editable: true,
-      ...getColumnSearchProps('domain')
     },
     {
       title: 'name',
       dataIndex: 'name',
       editable: true,
       ...getColumnSearchProps('name')
+    },
+    {
+      title: 'domain',
+      dataIndex: 'domain',
+      editable: true,
+      ...getColumnSearchProps('domain')
     },
     {
       title: 'url',
@@ -233,6 +234,7 @@ const DynamicTable: React.FC = () => {
     {
       title: 'operation',
       dataIndex: 'operation',
+      fixed: 'right',
       render: (_: any, record: any) =>
         companies?.length >= 1 ? (
           <Popconfirm okButtonProps={{
@@ -253,8 +255,9 @@ const DynamicTable: React.FC = () => {
   };
 
   const handleSave = async(row: DataType) => {
-    const {id, domain, name, url} = row
-    await editCompany({id, domain, name, url})
+    console.log('row', row)
+    // const {id, domain, name, url} = row
+    await editCompany({...row})
   };
 
   const components = {
@@ -268,7 +271,7 @@ const DynamicTable: React.FC = () => {
   const getColumns = () => {
     if(!companies[0]) return []
     const keys = Object.keys(companies[0])
-    const addedCols = keys.slice(4).map((key) => (
+    const addedCols = keys.slice(4).map((key: string) => (
       {
         title: key,
         dataIndex: key,
@@ -283,16 +286,44 @@ const DynamicTable: React.FC = () => {
       if (!(col as any).editable) {
         return col;
       }
+      const { title } = col
+      const titleStr = String(title)
+      const isEditCol = ['domain', 'name', 'url'].includes(titleStr)
+      const isImgType = (titleStr).includes('(img)')
+      const endOfImgTag = 5
+      const imgTitle = isImgType ? 
+      titleStr.slice(0, titleStr.length - endOfImgTag) : titleStr
+
       return {
         ...col,
         title: (
-          ['domain', 'name', 'url'].includes(col.title as string) ? col.title :
+          isEditCol ? title : 
+          <>
           <Typography.Text 
-            editable={{ onChange: (val) => {
-            updateColName(col.title as string, val)
-          } }}>
-            {(col as any).title}
-          </Typography.Text>),
+            editable={{ onChange: (val) => 
+              {
+                const newName = isImgType ? val + '(img)' : val
+                updateColName(titleStr, newName)
+              }}}>
+            {imgTitle}
+          </Typography.Text> {isImgType && '(img)'}
+          </>
+          ),
+        render: (val: string | undefined) => {
+          if(!isImgType) {
+            return <p>{val}</p>
+          } else {
+            if(val) {
+              return <Avatar
+                      src={val} 
+                      // alt="invalid url" 
+                      onError= {() => false}
+                    /> 
+            } else {
+              return <p>To input img url</p>
+            }
+          }
+        },
         onCell: (record: DataType) => ({
           record,
           editable: (col as any).editable,
@@ -303,7 +334,7 @@ const DynamicTable: React.FC = () => {
     });
   }
 
-  console.log('rr', refetch)
+
   return (
     <div>
       <Button onClick={handleAdd} style={{ marginBottom: 16 }}>
@@ -327,6 +358,7 @@ const DynamicTable: React.FC = () => {
         dataSource={companies}
         columns={getColumns() as ColumnTypes}
         loading={loading}
+        scroll={{ x: 1500 }}
         onChange={(pagination, filter, sorter) => {
           console.log('pages', pageParams, filter, sorter)
           const { current, pageSize } = pagination

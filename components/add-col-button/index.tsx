@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import type { MenuProps } from 'antd';
-import { Button, Dropdown, Space } from 'antd';
+import { Button, Dropdown } from 'antd';
 import { supabase } from "../../api";
 
 const items: MenuProps['items'] = [
@@ -33,12 +33,14 @@ export default function AddColButton({refetch}: IAddColButton) {
     console.log(`Click on item ${key}`);
     newColref.current = newColref.current + 1
     const count = newColref.current
+    const type = key === 'text' || key === 'image' ? 'text' : key
+
     const {data , error} = await supabase
     .rpc('add_column', {
       schema_name_in: 'public', //optional defaults to public
       table_name_in: 'companies',//required name of the table
-      column_name_in: `new column(${count})`,  //required: name for the column
-      type_in: key,    //optional: defaults to text
+      column_name_in: `new column${count}${key === 'image' ? ' (img)': ''}`,  //required: name for the column
+      type_in: type,    //optional: defaults to text
       // is_array: false           //optional: defaults to false
     });
 
