@@ -5,10 +5,6 @@ interface PageParams {
   current?: number
   pageSize?: number
   sorter?: any
-  // {
-  //   field: string,
-  //   order: 'ascend' | 'descend'
-  // }
   filter?: any
 }
 
@@ -49,7 +45,9 @@ const useData = () => {
           table: 'companies'
         }, () => fetchCompanies(pageParams))
       .subscribe()
-    // return () => supabase.removeChannel()
+    return () => {
+      supabase.removeChannel(mySubscription)
+    }
   }, [pageParams]);
 
   const fetchCompanies = async (pageParams: PageParams) => {
@@ -95,7 +93,6 @@ const useData = () => {
 
   const editCompany = async (info: Company) => {
     const{ id } = info
-    console.log('info', info)
     const { data, error } = await supabase
       .from('companies')
       .update([
@@ -145,7 +142,6 @@ const useData = () => {
     .select('*', {count: 'exact'})
     .like(filterField || 'domain', filterVal ? `%${filterVal}%` : '%')
 
-    console.log('count', count)
     setTotal(count)
   }
 

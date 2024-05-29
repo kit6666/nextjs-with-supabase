@@ -136,7 +136,6 @@ const DynamicTable: React.FC = () => {
     dataIndex: DataIndex,
   ) => {
     confirm();
-    console.log('search', selectedKeys, dataIndex)
     setPageParams({...pageParams, filter: {
       [dataIndex]: selectedKeys[0]
     }})
@@ -255,8 +254,6 @@ const DynamicTable: React.FC = () => {
   };
 
   const handleSave = async(row: DataType) => {
-    console.log('row', row)
-    // const {id, domain, name, url} = row
     await editCompany({...row})
   };
 
@@ -337,7 +334,9 @@ const DynamicTable: React.FC = () => {
 
   return (
     <div>
-      <Button onClick={handleAdd} style={{ marginBottom: 16 }}>
+      <Button onClick={handleAdd} 
+              className='bg-btn-background'
+              style={{ marginBottom: 16 }}>
         + Add row
       </Button>
       <AddColButton refetch ={refetch}/>
@@ -360,7 +359,6 @@ const DynamicTable: React.FC = () => {
         loading={loading}
         scroll={{ x: 1500 }}
         onChange={(pagination, filter, sorter) => {
-          console.log('pages', pageParams, filter, sorter)
           const { current, pageSize } = pagination
           setPageParams({current, pageSize, sorter, filter})
         }}

@@ -50,7 +50,9 @@ export default function AddColButton({refetch}: IAddColButton) {
 
   return (
     <Dropdown menu={{ items, onClick }} placement="bottomLeft">
-        <Button style={{marginLeft: 8}}>+ Add column</Button>
+        <Button
+          className='bg-btn-background'
+          style={{marginLeft: 8}}>+ Add column</Button>
     </Dropdown>
   );
 }
